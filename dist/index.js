@@ -155,14 +155,15 @@ function getPullRequest() {
         (0, core_1.info)('Getting information about pull request');
         const octokit = github.getOctokit((0, core_1.getInput)('token'));
         const excludedFiles = (0, core_1.getInput)('exclude_files');
-        const { data: files } = yield octokit.rest.pulls.listFiles(Object.assign(Object.assign({}, github.context.repo), { pull_number: github.context.issue.number }));
-        const numberOfLines = files.reduce((accumulator, file) => {
+        const { data } = yield octokit.rest.pulls.listFiles(Object.assign(Object.assign({}, github.context.repo), { pull_number: github.context.issue.number }));
+        const files = data.filter((file) => {
             if (file.filename.match(excludedFiles)) {
                 (0, core_1.info)(`excluding diff from ${file.filename}`);
-                return accumulator;
+                return false;
             }
-            return accumulator + file.changes;
-        }, 0);
+            return true;
+        });
+        const numberOfLines = files.reduce((accumulator, file) => accumulator + file.changes, 0);
         (0, core_1.info)(`Number of files ${files.length}`);
         (0, core_1.info)(`Number of lines ${numberOfLines}`);
         return Object.assign(Object.assign({}, github.context.payload.pull_request), { numberOfFiles: files.length, numberOfLines });
